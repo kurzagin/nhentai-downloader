@@ -17,8 +17,12 @@ export default function App() {
     return new NHentaiClient({
       apiKey: apiKey.trim() || undefined,
       baseUrl: window.location.origin,
-      imageBaseUrl: `${window.location.origin}/image-cdn`,
-      thumbBaseUrl: `${window.location.origin}/thumb-cdn`,
+      imageServers: [
+        `${window.location.origin}/image-cdn-1`,
+        `${window.location.origin}/image-cdn-3`,
+        `${window.location.origin}/image-cdn-4`,
+      ],
+      thumbServers: [`${window.location.origin}/thumb-cdn`],
     });
   };
 
@@ -50,7 +54,9 @@ export default function App() {
     try {
       const client = getClient();
       const { data, filename } = await client.downloadZip(gallery, {
-        concurrency: 4,
+        concurrency: 2,
+        delayMs: 150,
+        maxRetries: 3,
         onProgress: (p) => setProgress(p),
       });
 

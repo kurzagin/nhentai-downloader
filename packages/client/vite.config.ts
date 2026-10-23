@@ -15,22 +15,6 @@ export default defineConfig({
           'Referer': 'https://nhentai.net/',
           'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
         },
-        configure: (proxy) => {
-          proxy.on('error', (err, _req, res) => {
-            console.error('[vite-proxy] Error:', err.message);
-            if (!res.headersSent && 'writeHead' in res) {
-              (res as any).writeHead(502, { 'Content-Type': 'application/json' });
-              res.end(
-                JSON.stringify({
-                  error: 'Target Host Unreachable',
-                  message:
-                    'Could not connect to nhentai.net from the proxy host. Please ensure WARP/VPN is active or check connectivity.',
-                  details: err.message,
-                })
-              );
-            }
-          });
-        },
       },
       // Proxy thumbnail CDN requests
       '/thumb-cdn': {
@@ -43,12 +27,32 @@ export default defineConfig({
           'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
         },
       },
-      // Proxy image CDN requests
-      '/image-cdn': {
+      // Proxy image CDN requests to different subdomains for load balancing
+      '/image-cdn-1': {
         target: 'https://i1.nhentai.net',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/image-cdn/, ''),
+        rewrite: (path) => path.replace(/^\/image-cdn-1/, ''),
+        headers: {
+          'Referer': 'https://nhentai.net/',
+          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+        },
+      },
+      '/image-cdn-3': {
+        target: 'https://i3.nhentai.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/image-cdn-3/, ''),
+        headers: {
+          'Referer': 'https://nhentai.net/',
+          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+        },
+      },
+      '/image-cdn-4': {
+        target: 'https://i4.nhentai.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/image-cdn-4/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
           'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',

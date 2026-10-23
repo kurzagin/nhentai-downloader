@@ -58,15 +58,13 @@ export interface ClientOptions {
    */
   baseUrl?: string;
   /**
-   * Base URL for image CDN.
-   * Defaults to https://i1.nhentai.net
+   * Base URL for image CDN or array of servers for round-robin.
    */
-  imageBaseUrl?: string;
+  imageServers?: string[];
   /**
    * Base URL for thumbnail CDN.
-   * Defaults to https://t1.nhentai.net
    */
-  thumbBaseUrl?: string;
+  thumbServers?: string[];
   /**
    * Custom request fetcher (defaults to global fetch).
    */
@@ -91,9 +89,17 @@ export interface DownloadProgress {
 
 export interface DownloadOptions {
   /**
-   * Number of concurrent image downloads. Default: 3.
+   * Number of concurrent image downloads. Default: 2.
    */
   concurrency?: number;
+  /**
+   * Delay in milliseconds between consecutive requests. Default: 150ms.
+   */
+  delayMs?: number;
+  /**
+   * Number of retries per page upon failure or rate limit. Default: 3.
+   */
+  maxRetries?: number;
   /**
    * Progress callback.
    */
