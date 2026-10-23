@@ -1,0 +1,13 @@
+{
+  "name": "nhentai-downloader-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build:sdk": "npm --workspace=packages/nhentaijs run build",
+    "build:client": "npm --workspace=packages/client run build",
+    "build": "npm run build:sdk && npm run build:client",
+    "dev": "npm --workspace=packages/client run dev"
+  }
+}
