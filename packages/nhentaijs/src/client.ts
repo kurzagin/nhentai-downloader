@@ -70,8 +70,18 @@ export class NHentaiClient {
     const v1Url = `${this.baseUrl}/api/gallery/${id}`;
     const res = await this.fetchFn(v1Url, { headers });
     if (!res.ok) {
-      const statusText = res.statusText || `HTTP ${res.status}`;
-      throw new Error(`Failed to fetch gallery metadata for ID ${id}: ${statusText}`);
+      let errorDetail = res.statusText || `HTTP ${res.status}`;
+      try {
+        const errJson = await res.json();
+        if (errJson?.message) {
+          errorDetail = errJson.message;
+        } else if (errJson?.error) {
+          errorDetail = errJson.error;
+        }
+      } catch {
+        // Keep default statusText if body is not JSON
+      }
+      throw new Error(`Failed to fetch gallery metadata for ID ${id}: ${errorDetail}`);
     }
 
     return (await res.json()) as Gallery;
