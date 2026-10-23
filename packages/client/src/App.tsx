@@ -12,13 +12,13 @@ export default function App() {
   const [gallery, setGallery] = useState<Gallery | null>(null);
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
 
-  // Instantiates client using relative endpoints for Vite proxy or direct paths
+  // Instantiates client using Vite dev server proxy endpoints
   const getClient = () => {
     return new NHentaiClient({
       apiKey: apiKey.trim() || undefined,
       baseUrl: window.location.origin,
-      imageBaseUrl: `${window.location.origin}/galleries`,
-      thumbBaseUrl: `${window.location.origin}/thumb-galleries`,
+      imageBaseUrl: `${window.location.origin}/image-cdn`,
+      thumbBaseUrl: `${window.location.origin}/thumb-cdn`,
     });
   };
 
@@ -99,7 +99,7 @@ export default function App() {
                 <input
                   id="gallery-input"
                   type="text"
-                  placeholder="e.g. 177013 or https://nhentai.net/g/177013/"
+                  placeholder="e.g. 521265 or https://nhentai.net/g/521265/"
                   value={inputVal}
                   onChange={(e) => setInputVal(e.target.value)}
                   className="w-full bg-[#27272a] border border-[#3f3f46] rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#ed2553] transition"
@@ -123,14 +123,14 @@ export default function App() {
                 <div className="animate-fadeIn">
                   <input
                     type="password"
-                    placeholder="Enter API Key / Token"
+                    placeholder="Enter API Key"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     className="w-full bg-[#27272a] border border-[#3f3f46] rounded-lg px-4 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#ed2553] transition"
                     disabled={loading || downloading}
                   />
                   <p className="text-[11px] text-gray-500 mt-1">
-                    Sent as Bearer token and X-API-Key header with API v2 requests.
+                    Pass your API key from account settings to increase rate limits.
                   </p>
                 </div>
               )}
@@ -160,7 +160,10 @@ export default function App() {
           {error && (
             <div className="bg-red-950/40 border border-red-800/60 rounded-lg p-3 text-red-300 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-red-400" />
-              <span>{error}</span>
+              <div className="space-y-1">
+                <span className="font-semibold block">Error</span>
+                <span className="block leading-relaxed">{error}</span>
+              </div>
             </div>
           )}
         </div>

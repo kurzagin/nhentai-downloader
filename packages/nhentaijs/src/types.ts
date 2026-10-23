@@ -1,24 +1,25 @@
-/**
- * Image format indicators used by nHentai:
- * 'j' -> 'jpg'
- * 'p' -> 'png'
- * 'g' -> 'gif'
- * 'w' -> 'webp'
- */
-export type ImageType = 'j' | 'p' | 'g' | 'w';
+export interface CoverInfo {
+  path: string;
+  width: number;
+  height: number;
+}
 
-export interface ImageMetadata {
-  t: ImageType | string;
-  w: number;
-  h: number;
+export interface PageInfo {
+  number: number;
+  path: string;
+  width: number;
+  height: number;
+  thumbnail: string;
+  thumbnail_width: number;
+  thumbnail_height: number;
 }
 
 export interface GalleryTag {
   id: number;
   type: string;
   name: string;
-  url: string;
-  count: number;
+  url?: string;
+  count?: number;
 }
 
 export interface GalleryTitle {
@@ -27,17 +28,18 @@ export interface GalleryTitle {
   pretty: string;
 }
 
-export interface GalleryImages {
-  pages: ImageMetadata[];
-  cover: ImageMetadata;
-  thumbnail: ImageMetadata;
+export interface CdnConfig {
+  image_servers: string[];
+  thumb_servers: string[];
 }
 
 export interface Gallery {
   id: number | string;
   media_id: string;
   title: GalleryTitle;
-  images: GalleryImages;
+  cover: CoverInfo;
+  thumbnail?: CoverInfo;
+  pages: PageInfo[];
   scanlator?: string;
   upload_date: number;
   tags: GalleryTag[];
@@ -47,7 +49,7 @@ export interface Gallery {
 
 export interface ClientOptions {
   /**
-   * Optional API key if using authenticated endpoints or custom proxy.
+   * Optional API key (passed as `Authorization: Key <api_key>`).
    */
   apiKey?: string;
   /**
@@ -56,24 +58,25 @@ export interface ClientOptions {
    */
   baseUrl?: string;
   /**
-   * Custom image host (defaults to https://i.nhentai.net)
+   * Base URL for image CDN.
+   * Defaults to https://i1.nhentai.net
    */
   imageBaseUrl?: string;
   /**
-   * Custom thumbnail host (defaults to https://t.nhentai.net)
+   * Base URL for thumbnail CDN.
+   * Defaults to https://t1.nhentai.net
    */
   thumbBaseUrl?: string;
   /**
    * Custom request fetcher (defaults to global fetch).
-   * Can be used to inject custom proxies, headers, or agent.
    */
   fetch?: typeof fetch;
   /**
-   * Custom User-Agent header (for Node.js environments)
+   * Custom User-Agent header (defaults to nhentaijs/1.0.0).
    */
   userAgent?: string;
   /**
-   * Optional cookies or session tokens (e.g., cf_clearance, csrftoken)
+   * Optional cookies or session tokens.
    */
   cookie?: string;
 }

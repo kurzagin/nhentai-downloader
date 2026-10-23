@@ -1,9 +1,7 @@
-import type { ImageType } from './types';
-
 /**
  * Maps NHentai internal single-letter image type indicators to file extensions.
  */
-export function getExtension(type: ImageType | string): string {
+export function getExtension(type: string): string {
   switch (type) {
     case 'j':
       return 'jpg';
@@ -14,7 +12,7 @@ export function getExtension(type: ImageType | string): string {
     case 'w':
       return 'webp';
     default:
-      return 'jpg';
+      return type || 'jpg';
   }
 }
 
@@ -22,10 +20,10 @@ export function getExtension(type: ImageType | string): string {
  * Extracts gallery ID from raw input (numeric string, nhentai URL, or path).
  *
  * Supported formats:
- * - "177013"
- * - "https://nhentai.net/g/177013/"
- * - "https://nhentai.net/g/177013/1/"
- * - "/g/177013"
+ * - "521265"
+ * - "https://nhentai.net/g/521265/"
+ * - "https://nhentai.net/g/521265/1/"
+ * - "/g/521265"
  */
 export function parseGalleryId(input: string | number): string {
   const str = String(input).trim();

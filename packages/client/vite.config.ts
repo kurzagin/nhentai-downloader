@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true,
+    host: '0.0.0.0',
     proxy: {
       '/api': {
         target: 'https://nhentai.net',
@@ -13,18 +13,18 @@ export default defineConfig({
         secure: false,
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
         },
         configure: (proxy) => {
           proxy.on('error', (err, _req, res) => {
-            console.error('[vite-proxy] Connection error:', err.message);
+            console.error('[vite-proxy] Error:', err.message);
             if (!res.headersSent && 'writeHead' in res) {
               (res as any).writeHead(502, { 'Content-Type': 'application/json' });
               res.end(
                 JSON.stringify({
                   error: 'Target Host Unreachable',
                   message:
-                    'Could not connect to nhentai.net from the server host. This usually means your network, ISP, or hosting environment blocks direct connections to nhentai, or Cloudflare has blocked the server IP.',
+                    'Could not connect to nhentai.net from the proxy host. Please ensure WARP/VPN is active or check connectivity.',
                   details: err.message,
                 })
               );
@@ -32,23 +32,26 @@ export default defineConfig({
           });
         },
       },
-      '/galleries': {
-        target: 'https://i.nhentai.net',
+      // Proxy thumbnail CDN requests
+      '/thumb-cdn': {
+        target: 'https://t1.nhentai.net',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/thumb-cdn/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
         },
       },
-      '/thumb-galleries': {
-        target: 'https://t.nhentai.net',
+      // Proxy image CDN requests
+      '/image-cdn': {
+        target: 'https://i1.nhentai.net',
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/thumb-galleries/, '/galleries'),
+        rewrite: (path) => path.replace(/^\/image-cdn/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
         },
       },
     },

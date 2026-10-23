@@ -1,5 +1,5 @@
 import type { ClientOptions, DownloadOptions, DownloadProgress, Gallery } from './types';
-import { getExtension, parseGalleryId, sanitizeFilename } from './utils';
+import { parseGalleryId, sanitizeFilename } from './utils';
 import JSZip from 'jszip';
 
 export class NHentaiClient {
@@ -8,34 +8,33 @@ export class NHentaiClient {
   private thumbBaseUrl: string;
   private apiKey?: string;
   private fetchFn: typeof fetch;
-  private userAgent?: string;
+  private userAgent: string;
   private cookie?: string;
 
   constructor(options: ClientOptions = {}) {
     this.baseUrl = (options.baseUrl || 'https://nhentai.net').replace(/\/+$/, '');
-    this.imageBaseUrl = (options.imageBaseUrl || 'https://i.nhentai.net').replace(/\/+$/, '');
-    this.thumbBaseUrl = (options.thumbBaseUrl || 'https://t.nhentai.net').replace(/\/+$/, '');
+    this.imageBaseUrl = (options.imageBaseUrl || 'https://i1.nhentai.net').replace(/\/+$/, '');
+    this.thumbBaseUrl = (options.thumbBaseUrl || 'https://t1.nhentai.net').replace(/\/+$/, '');
     this.apiKey = options.apiKey;
     this.fetchFn = options.fetch || (typeof globalThis !== 'undefined' ? globalThis.fetch.bind(globalThis) : fetch);
-    this.userAgent = options.userAgent;
+    this.userAgent = options.userAgent || 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)';
     this.cookie = options.cookie;
   }
 
   /**
-   * Builds common headers including optional API key, user agent, and cookies.
+   * Builds headers complying with nHentai API v2 requirements.
+   * Authentication is passed as `Authorization: Key YOUR_API_KEY`.
    */
   private getHeaders(): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
+      'User-Agent': this.userAgent,
     };
 
     if (this.apiKey) {
-      headers['Authorization'] = `Bearer ${this.apiKey}`;
+      // Official nHentai API v2 uses `Authorization: Key <api_key>`
+      headers['Authorization'] = `Key ${this.apiKey}`;
       headers['X-API-Key'] = this.apiKey;
-    }
-
-    if (this.userAgent) {
-      headers['User-Agent'] = this.userAgent;
     }
 
     if (this.cookie) {
@@ -46,66 +45,60 @@ export class NHentaiClient {
   }
 
   /**
-   * Fetches gallery metadata by URL or ID.
-   * Checks both API v2 and v1 endpoints for resilience.
+   * Fetches gallery metadata by URL or ID using official API v2.
    */
   async getGallery(input: string | number): Promise<Gallery> {
     const id = parseGalleryId(input);
     const headers = this.getHeaders();
+    const v2Url = `${this.baseUrl}/api/v2/galleries/${id}`;
 
-    // 1. Attempt API v2 endpoint
-    try {
-      const v2Url = `${this.baseUrl}/api/v2/galleries/${id}`;
-      const response = await this.fetchFn(v2Url, { headers });
-      if (response.ok) {
-        const data = await response.json();
-        // Return unwrapped gallery data if inside a data/gallery property or root
-        return data?.gallery || data?.data || data;
-      }
-    } catch {
-      // Continue to fallback
-    }
+    const res = await this.fetchFn(v2Url, { headers });
 
-    // 2. Fallback to API v1 endpoint
-    const v1Url = `${this.baseUrl}/api/gallery/${id}`;
-    const res = await this.fetchFn(v1Url, { headers });
     if (!res.ok) {
-      let errorDetail = res.statusText || `HTTP ${res.status}`;
+      let errorMsg = res.statusText || `HTTP ${res.status}`;
       try {
         const errJson = await res.json();
-        if (errJson?.message) {
-          errorDetail = errJson.message;
-        } else if (errJson?.error) {
-          errorDetail = errJson.error;
+        if (errJson?.error) {
+          errorMsg = errJson.error;
+        } else if (errJson?.message) {
+          errorMsg = errJson.message;
         }
       } catch {
-        // Keep default statusText if body is not JSON
+        // Not JSON
       }
-      throw new Error(`Failed to fetch gallery metadata for ID ${id}: ${errorDetail}`);
+
+      if (res.status === 429) {
+        throw new Error(`Rate limit exceeded on nHentai API (429). Please wait a moment or provide an API Key.`);
+      }
+
+      throw new Error(`Failed to fetch gallery metadata for ID ${id}: ${errorMsg}`);
     }
 
-    return (await res.json()) as Gallery;
+    const data = await res.json();
+    return data as Gallery;
   }
 
   /**
-   * Constructs the direct cover image URL.
+   * Returns the direct cover image URL.
    */
   getCoverUrl(gallery: Gallery): string {
-    const ext = getExtension(gallery.images.cover.t);
-    return `${this.thumbBaseUrl}/galleries/${gallery.media_id}/cover.${ext}`;
+    if (!gallery?.cover?.path) {
+      return '';
+    }
+    const cleanPath = gallery.cover.path.replace(/^\/+/, '');
+    return `${this.thumbBaseUrl}/${cleanPath}`;
   }
 
   /**
-   * Constructs the direct page image URL for a given 1-based page number.
+   * Returns the direct image URL for a given 1-based page number.
    */
   getPageUrl(gallery: Gallery, pageNumber: number): string {
-    const pageIndex = pageNumber - 1;
-    const pageMeta = gallery.images.pages[pageIndex];
-    if (!pageMeta) {
-      throw new Error(`Page ${pageNumber} out of range (total pages: ${gallery.num_pages})`);
+    const page = gallery.pages?.find((p) => p.number === pageNumber) || gallery.pages?.[pageNumber - 1];
+    if (!page?.path) {
+      throw new Error(`Page ${pageNumber} not found in gallery`);
     }
-    const ext = getExtension(pageMeta.t);
-    return `${this.imageBaseUrl}/galleries/${gallery.media_id}/${pageNumber}.${ext}`;
+    const cleanPath = page.path.replace(/^\/+/, '');
+    return `${this.imageBaseUrl}/${cleanPath}`;
   }
 
   /**
@@ -116,7 +109,7 @@ export class NHentaiClient {
       signal,
       headers: {
         Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        ...(this.userAgent ? { 'User-Agent': this.userAgent } : {}),
+        'User-Agent': this.userAgent,
         ...(this.cookie ? { Cookie: this.cookie } : {}),
       },
     });
@@ -129,29 +122,30 @@ export class NHentaiClient {
   }
 
   /**
-   * Downloads all pages for a gallery and packages them into a Zip file (Uint8Array / Blob).
+   * Downloads all pages for a gallery and packages them into a Zip file (Uint8Array).
    */
   async downloadZip(
     input: string | number | Gallery,
     options: DownloadOptions = {}
   ): Promise<{ data: Uint8Array; filename: string; gallery: Gallery }> {
     const gallery: Gallery =
-      typeof input === 'object' && 'images' in input ? input : await this.getGallery(input);
+      typeof input === 'object' && 'pages' in input ? input : await this.getGallery(input);
 
     const { concurrency = 3, onProgress, signal } = options;
     const zip = new JSZip();
     const folderName = sanitizeFilename(gallery.title.pretty || gallery.title.english || `nhentai_${gallery.id}`);
     const folder = zip.folder(folderName) || zip;
 
-    const total = gallery.images.pages.length;
+    const pages = gallery.pages || [];
+    const total = pages.length;
     let completedCount = 0;
 
-    // Concurrency pool runner
-    const pageTasks = gallery.images.pages.map((pageMeta, idx) => {
-      const pageNumber = idx + 1;
-      const ext = getExtension(pageMeta.t);
+    const pageTasks = pages.map((page) => {
+      const pageNumber = page.number;
+      const cleanPath = page.path.replace(/^\/+/, '');
+      const ext = cleanPath.split('.').pop() || 'jpg';
       const filename = `${String(pageNumber).padStart(3, '0')}.${ext}`;
-      const url = `${this.imageBaseUrl}/galleries/${gallery.media_id}/${pageNumber}.${ext}`;
+      const url = `${this.imageBaseUrl}/${cleanPath}`;
 
       return { pageNumber, filename, url };
     });
