@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.378.0",
-    "nhentaijs": "file:../nhentaijs",
+    "nhentaijs": "github:krpkg/nhentaijs",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
