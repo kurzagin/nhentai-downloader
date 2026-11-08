@@ -9,8 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@krpkg/nhentaijs": "^1.0.0",
+    "@krpkg/ui": "^0.3.1",
     "lucide-react": "^0.378.0",
-    "nhentaijs": "github:krpkg/nhentaijs",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

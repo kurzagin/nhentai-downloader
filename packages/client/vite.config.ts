@@ -13,7 +13,7 @@ export default defineConfig({
         secure: false,
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+          'User-Agent': '@krpkg/nhentaijs/1.0.0 (https://github.com/krpkg/nhentaijs)',
         },
       },
       // Proxy thumbnail CDN requests
@@ -24,7 +24,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/thumb-cdn/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+          'User-Agent': '@krpkg/nhentaijs/1.0.0 (https://github.com/krpkg/nhentaijs)',
         },
       },
       // Proxy image CDN requests to different subdomains for load balancing
@@ -35,7 +35,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/image-cdn-1/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+          'User-Agent': '@krpkg/nhentaijs/1.0.0 (https://github.com/krpkg/nhentaijs)',
         },
       },
       '/image-cdn-3': {
@@ -45,7 +45,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/image-cdn-3/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+          'User-Agent': '@krpkg/nhentaijs/1.0.0 (https://github.com/krpkg/nhentaijs)',
         },
       },
       '/image-cdn-4': {
@@ -55,7 +55,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/image-cdn-4/, ''),
         headers: {
           'Referer': 'https://nhentai.net/',
-          'User-Agent': 'nhentaijs/1.0.0 (https://github.com/user/nhentaijs)',
+          'User-Agent': '@krpkg/nhentaijs/1.0.0 (https://github.com/krpkg/nhentaijs)',
         },
       },
     },
